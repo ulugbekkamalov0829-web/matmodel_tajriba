@@ -1,0 +1,815 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2-tajriba ishi: taqsimot qonuni</title>
+<meta name="description" content="Matematik modellashtirish, 2-tajriba ishi: 25 ta topshiriqning binomial taqsimot bo'yicha yechimlari va Excel fayllari.">
+<style>
+:root{
+  --bg:#eef1f0;
+  --sheet:#ffffff;
+  --ink:#16202a;
+  --muted:#586472;
+  --grid:#c9d1d6;
+  --head:#e4e9e8;
+  --navy:#1f3864;
+  --band:#dce6f1;
+  --green:#1d6f42;
+  --green-soft:#e3f1e8;
+  --warn:#9a3412;
+  --serif:"Times New Roman",Tinos,"Liberation Serif","Nimbus Roman",Georgia,serif;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 var(--sans)}
+.wrap{max-width:1060px;margin:0 auto;padding:0 16px}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--green);outline-offset:2px}
+
+/* ---------- sarlavha ---------- */
+.top{padding:36px 0 20px}
+.top h1{font:700 clamp(28px,5vw,44px)/1.1 var(--serif);margin:0 0 10px;letter-spacing:-.01em;max-width:20ch}
+.top p{margin:0;color:var(--muted);max-width:62ch}
+
+/* ---------- qidiruv qatori ---------- */
+.find{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:flex-end;margin:0 0 14px}
+.find label{flex:1 0 100%;font-size:14px;color:var(--muted)}
+.find input{flex:1 1 220px;min-width:0;height:44px;padding:0 12px;border:1px solid var(--grid);background:var(--sheet);border-radius:2px;font-family:var(--serif);font-size:19px}
+.find input:focus{outline:2px solid var(--green);outline-offset:-1px;border-color:var(--green)}
+.btn{min-height:44px;padding:8px 16px;border:1px solid var(--ink);background:var(--sheet);border-radius:2px;font-weight:600;line-height:1.25}
+.btn:hover{background:var(--head)}
+.btn.go{background:var(--green);border-color:var(--green);color:#fff}
+.btn.go:hover{background:#17593a}
+.msg{flex:1 0 100%;min-height:1.4em;margin:0;font-size:14px;color:var(--warn)}
+
+/* ---------- topshiriqlar jadvali (A–E ustunlar) ---------- */
+.board{display:grid;grid-template-columns:38px repeat(5,minmax(0,1fr));background:var(--sheet);border:1px solid var(--grid);border-right:0;border-bottom:0}
+.board > *{border:0;border-right:1px solid var(--grid);border-bottom:1px solid var(--grid);background:var(--sheet);margin:0;border-radius:0;text-align:left}
+.board .corner,.board .rowh,.board .colh{background:var(--head);color:var(--muted);font-size:13px}
+.board .rowh{display:flex;align-items:center;justify-content:center}
+.board .corner{padding:0;font-size:12px;font-weight:600;text-align:center}
+.board .colh{padding:8px 10px;display:flex;flex-direction:column;gap:2px;min-height:64px}
+.board .colh b{font:700 20px/1 var(--serif);color:var(--ink)}
+.board .colh span{font-size:12.5px;line-height:1.25}
+.board .colh:hover,.board .corner:hover{background:#d6dedc}
+.board .colh.on,.board .corner.on{background:var(--green);color:#fff}
+.board .colh.on b{color:#fff}
+.board .cell{padding:9px 10px 10px;display:flex;flex-direction:column;gap:1px;min-height:86px;position:relative}
+.board .cell:hover{background:#f4f7f6}
+.board .cell .no{font:700 24px/1.05 var(--serif);color:var(--navy)}
+.board .cell .tt{font-size:13.5px;line-height:1.25}
+.board .cell .np{font-size:12.5px;color:var(--muted);margin-top:auto;padding-top:4px}
+.board .cell.incol{background:var(--green-soft)}
+.board .cell.on{box-shadow:inset 0 0 0 3px var(--green);z-index:1}
+.hint{font-size:14px;color:var(--muted);margin:8px 0 0}
+
+/* ---------- yechim varaqlari ---------- */
+.solution{margin:28px 0 48px}
+.bar{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;margin:0 0 14px}
+.bar h2{font:700 24px/1.2 var(--serif);margin:0}
+.bar p{margin:2px 0 0;color:var(--muted);font-size:14.5px}
+.acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.acts .msg{flex:1 0 100%}
+.empty{background:var(--sheet);border:1px dashed var(--grid);padding:26px 22px}
+.empty h2{font:700 22px/1.2 var(--serif);margin:0 0 6px}
+.empty p{margin:0 0 14px;color:var(--muted);max-width:60ch}
+
+.sheet{background:var(--sheet);border:1px solid var(--grid);padding:26px clamp(14px,3.4vw,34px) 28px;margin:0 0 22px;font-family:var(--serif);font-size:18px;line-height:1.4}
+.sheet h3{font:700 clamp(22px,3.4vw,28px)/1.2 var(--serif);text-align:center;margin:0 0 12px}
+.sheet .cond{margin:0 0 10px;max-width:78ch}
+.sheet .xdef{margin:0 0 18px;font-style:italic;color:var(--navy);max-width:82ch}
+.scroll{overflow-x:auto;margin:0 0 20px}
+.sheet table{border-collapse:collapse;width:100%;min-width:560px}
+.sheet th,.sheet td{padding:5px 10px;border-bottom:1px solid #e3e7ea;vertical-align:middle}
+.sheet .params td:nth-child(2),.sheet .params td:nth-child(3){text-align:center}
+.sheet .params td.n{text-align:right}
+.sheet .dist th,.sheet .chars th{font-weight:700;border-bottom:2px solid var(--ink);text-align:center;padding-top:8px;padding-bottom:8px}
+.sheet .dist td{text-align:center}
+.sheet .dist td:last-child{text-align:left}
+.sheet .dist tr.total td{background:var(--band);color:var(--navy);font-weight:700;border-bottom:0}
+.sheet .dist tr.total td:last-child{text-align:center}
+.sheet .chars th:first-child,.sheet .chars td:first-child{text-align:left}
+.sheet .chars td:nth-child(3){text-align:center;font-variant-numeric:tabular-nums}
+.sheet .chars td:nth-child(4){color:var(--muted)}
+.sheet .answer{font-style:italic;color:var(--navy);margin:0 0 20px}
+.sheet .interp{margin:0 0 20px;padding:12px 14px;background:var(--band);color:var(--navy)}
+.sheet .foot{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;font-family:var(--sans);font-size:15px;color:var(--muted)}
+.sheet .foot .msg{flex:1 0 100%}
+
+.cap{font-family:var(--sans);font-size:14px;color:var(--muted);margin:0 0 6px}
+.plot{display:flex;align-items:flex-end;gap:6px;height:180px;padding:0 2px;border-bottom:2px solid var(--ink);font-family:var(--sans)}
+.plot .col{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+.plot .v{font-size:12px;color:var(--muted);margin-bottom:3px;white-space:nowrap}
+.plot .b{width:min(100%,56px);background:var(--navy)}
+.plot .col.mode .b{background:var(--green)}
+.plot-x{display:flex;gap:6px;margin:4px 0 22px;padding:0 2px;font-family:var(--sans);font-size:13px;color:var(--muted)}
+.plot-x span{flex:1 1 0;text-align:center}
+
+details{margin:0 0 20px;font-size:17px}
+summary{cursor:pointer;font-family:var(--sans);font-size:15px;font-weight:600;padding:6px 0}
+details ol{margin:8px 0 0;padding-left:0;list-style:none;overflow-x:auto}
+details li{padding:3px 0;white-space:nowrap}
+
+footer{border-top:1px solid var(--grid);padding:18px 0 40px;color:var(--muted);font-size:14px}
+
+@media (max-width:720px){
+  .board{grid-template-columns:26px repeat(5,minmax(0,1fr))}
+  .board .colh{min-height:0;padding:9px 4px;align-items:center}
+  .board .colh span{display:none}
+  .board .cell{min-height:54px;padding:8px 4px;align-items:center;justify-content:center}
+  .board .cell .tt,.board .cell .np{display:none}
+  .board .cell .no{font-size:22px}
+  .sheet{font-size:16.5px}
+  .plot .v{font-size:10.5px}
+}
+@media print{
+  body{background:#fff}
+  .top,.picker,.bar .acts,.sheet .foot,footer,details summary{display:none!important}
+  .solution{margin:0}
+  .sheet{border:0;padding:0;margin:0;break-after:page}
+  .sheet:last-child{break-after:auto}
+  .scroll{overflow:visible}
+  details ol{overflow:visible}
+  .sheet .dist tr.total td,.sheet .interp,.plot .b{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <h1>2-tajriba ishi: taqsimot qonuni</h1>
+    <p>Matematik modellashtirish fani. O'z topshirig'ingizni tanlang: yechim jadvali shu sahifada chiqadi, Excel faylini esa formulalari bilan yuklab olasiz.</p>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="picker" aria-label="Topshiriqni tanlash">
+    <form class="find" id="find">
+      <label for="q">Topshiriq raqamini (1–25) yoki kategoriya harfini (A–E) yozing</label>
+      <input id="q" type="text" autocomplete="off" placeholder="masalan: 7 yoki C">
+      <button class="btn go" type="submit">Yechimni ko'rsatish</button>
+      <p class="msg" id="findMsg" role="status"></p>
+    </form>
+    <div class="board" id="board"></div>
+    <p class="hint">Katakni bossangiz bitta topshiriq, ustun sarlavhasini (A–E) bossangiz shu kategoriyaning beshta yechimi ochiladi.</p>
+  </section>
+
+  <section class="solution" id="solution" aria-live="polite"></section>
+</main>
+
+<footer>
+  <div class="wrap">Barcha topshiriqlar binomial taqsimot bilan yechiladi: P(X = k) = C(n; k) · p<sup>k</sup> · q<sup>n−k</sup>, bu yerda q = 1 − p.</div>
+</footer>
+
+<script>
+/* =====================================================================
+   1-QISM. Ma'lumotlar, hisoblash va Excel fayl (brauzerga bog'liq emas)
+   Yangi topshiriq qo'shish uchun TASKS ro'yxatiga bitta yozuv qo'shing.
+   ===================================================================== */
+(function (root) {
+  "use strict";
+
+  var CATS = [
+    { id: "A", name: "Diskret tasodifiy miqdorni modellashtirish" },
+    { id: "B", name: "Ishlab chiqarish va texnik jarayonlar" },
+    { id: "C", name: "Axborot texnologiyalari va raqamli tizimlar" },
+    { id: "D", name: "Qishloq xo'jaligi va tabiiy jarayonlar" },
+    { id: "E", name: "Murakkabroq modellashtirish topshiriqlari" }
+  ];
+
+  /* n  — tajribalar soni
+     p  — bitta tajribada sanalayotgan hodisaning ro'y berish ehtimoli
+     ev — sanalayotgan hodisa (izoh ustuni uchun)
+     pl, ql — p va q ning jadvaldagi nomi
+     x  — X tasodifiy miqdorning ta'rifi */
+  var TASKS = [
+    { id: 1, cat: "A", title: "Sifat nazorati", n: 5, p: 0.1,
+      text: "Korxonada mahsulotning nuqsonli bo'lish ehtimoli 0,1. Tasodifiy ravishda 5 ta mahsulot tanlandi. Nuqsonli mahsulotlar sonini X deb olib, X ning taqsimot qonunini tuzing.",
+      ev: "nuqsonli mahsulot", pl: "Nuqsonli bo'lish ehtimoli", ql: "Nuqsonsiz bo'lish ehtimoli",
+      x: "5 ta mahsulot ichidagi nuqsonli mahsulotlar soni" },
+    { id: 2, cat: "A", title: "Qurilmalar ishonchliligi", n: 4, p: 0.05,
+      text: "Server tizimida 4 ta mustaqil qurilma mavjud. Har bir qurilmaning ishlamay qolish ehtimoli 0,05. Ishlamay qolgan qurilmalar sonini X deb olib, uning taqsimot qonunini tuzing.",
+      ev: "ishlamay qolgan qurilma", pl: "Ishlamay qolish ehtimoli", ql: "Ishlab turish ehtimoli",
+      x: "4 ta qurilmadan ishlamay qolganlari soni" },
+    { id: 3, cat: "A", title: "Tanga tajribasi", n: 4, p: 0.5,
+      text: "Tanga 4 marta tashlanadi. Gerb tushishlar sonini X deb olib, X ning taqsimot qonunini tuzing.",
+      ev: "gerb tushishi", pl: "Gerb tushish ehtimoli", ql: "Gerb tushmaslik ehtimoli",
+      x: "4 ta tashlashda gerb tushishlar soni",
+      notes: function (k, n) { return k === 0 ? "Gerb umuman tushmaydi" : k === n ? "Gerb " + n + " marta ham tushadi" : "Gerb " + k + " marta tushadi"; } },
+    { id: 4, cat: "A", title: "Test natijalarini modellashtirish", n: 5, p: 0.8,
+      text: "Talaba 5 ta mustaqil test savoliga javob beradi. Har bir savolga to'g'ri javob berish ehtimoli 0,8. To'g'ri javoblar sonini X deb olib, taqsimot qonunini tuzing.",
+      ev: "to'g'ri javob", pl: "To'g'ri javob berish ehtimoli", ql: "Noto'g'ri javob berish ehtimoli",
+      x: "5 ta savoldan to'g'ri javoblar soni" },
+    { id: 5, cat: "A", title: "Avtomatlashtirilgan tizim", n: 6, p: 0.1,
+      text: "Avtomatik nazorat tizimi 6 ta detalni tekshiradi. Har bir detalning standart talabga javob bermaslik ehtimoli 0,1. Standartga javob bermaydigan detallar sonini X deb olib, taqsimot qonunini tuzing.",
+      ev: "standartga javob bermaydigan detal", pl: "Standartga javob bermaslik ehtimoli", ql: "Standartga javob berish ehtimoli",
+      x: "6 ta detaldan standartga javob bermaydiganlari soni" },
+
+    { id: 6, cat: "B", title: "Payvand choklari", n: 4, p: 0.08,
+      text: "Bir konstruksiyada 4 ta payvand chok mavjud. Har bir chokning sifatsiz chiqish ehtimoli 0,08. Sifatsiz choklar sonini X deb olib, taqsimot qonunini tuzing.",
+      ev: "sifatsiz chok", pl: "Sifatsiz chiqish ehtimoli", ql: "Sifatli chiqish ehtimoli",
+      x: "4 ta payvand chokdan sifatsizlari soni" },
+    { id: 7, cat: "B", title: "Elektr lampalar", n: 5, p: 0.15,
+      text: "Omborda 5 ta elektr lampa bor. Har bir lampaning ishlamaslik ehtimoli 0,15. Ishlamaydigan lampalar sonining taqsimot qonunini tuzing.",
+      ev: "ishlamaydigan lampa", pl: "Ishlamaslik ehtimoli", ql: "Ishlash ehtimoli",
+      x: "5 ta lampadan ishlamaydiganlari soni" },
+    { id: 8, cat: "B", title: "Sensorlar", n: 3, p: 0.1,
+      text: "Avtomatik boshqaruv tizimida 3 ta sensor mavjud. Har bir sensorning noto'g'ri signal berish ehtimoli 0,1. Noto'g'ri signal beruvchi sensorlar sonini X deb olib, taqsimot qonunini tuzing.",
+      ev: "noto'g'ri signal beruvchi sensor", pl: "Noto'g'ri signal berish ehtimoli", ql: "To'g'ri signal berish ehtimoli",
+      x: "3 ta sensordan noto'g'ri signal beruvchilari soni" },
+    { id: 9, cat: "B", title: "Beton namunalarini tekshirish", n: 6, p: 0.12,
+      text: "Laboratoriyada 6 ta beton namunasi sinovdan o'tkazildi. Har bir namunaning talabga javob bermaslik ehtimoli 0,12. Talabga javob bermaydigan namunalar sonining taqsimot qonunini tuzing.",
+      ev: "talabga javob bermaydigan namuna", pl: "Talabga javob bermaslik ehtimoli", ql: "Talabga javob berish ehtimoli",
+      x: "6 ta beton namunasidan talabga javob bermaydiganlari soni" },
+    { id: 10, cat: "B", title: "Mexanizm detallari", n: 4, p: 0.2,
+      text: "Mexanizm uchun 4 ta detal tanlandi. Har bir detalning nuqsonli bo'lish ehtimoli 0,2. Nuqsonli detallar sonini X deb olib, taqsimot qonunini tuzing.",
+      ev: "nuqsonli detal", pl: "Nuqsonli bo'lish ehtimoli", ql: "Nuqsonsiz bo'lish ehtimoli",
+      x: "4 ta detaldan nuqsonlilari soni" },
+
+    { id: 11, cat: "C", title: "Tarmoq paketlari", n: 5, p: 0.05,
+      text: "Tarmoq orqali yuborilgan 5 ta paketning har birining yo'qolish ehtimoli 0,05. Yo'qolgan paketlar sonini X deb olib, taqsimot qonunini tuzing.",
+      ev: "yo'qolgan paket", pl: "Yo'qolish ehtimoli", ql: "Yetib borish ehtimoli",
+      x: "5 ta paketdan yo'qolganlari soni" },
+    { id: 12, cat: "C", title: "Server so'rovlari", n: 4, p: 0.1,
+      text: "Serverga kelgan 4 ta mustaqil so'rovning har birida xatolik yuz berish ehtimoli 0,1. Xatolik mavjud so'rovlar sonining taqsimot qonunini tuzing.",
+      ev: "xatolik yuz bergan so'rov", pl: "Xatolik yuz berish ehtimoli", ql: "Xatosiz bajarilish ehtimoli",
+      x: "4 ta so'rovdan xatolik yuz berganlari soni" },
+    { id: 13, cat: "C", title: "Dasturiy testlash", n: 6, p: 0.2,
+      text: "Dasturiy ta'minotning 6 ta mustaqil funksiyasi test qilinmoqda. Har bir funksiyada xato aniqlanish ehtimoli 0,2. Xato aniqlangan funksiyalar sonini X deb olib, taqsimot qonunini tuzing.",
+      ev: "xato aniqlangan funksiya", pl: "Xato aniqlanish ehtimoli", ql: "Xato aniqlanmaslik ehtimoli",
+      x: "6 ta funksiyadan xato aniqlanganlari soni" },
+    { id: 14, cat: "C", title: "Ma'lumotlarni uzatish", n: 8, p: 0.05,
+      text: "8 ta ma'lumot paketi uzatilmoqda. Har bir paketning muvaffaqiyatli uzatilmaslik ehtimoli 0,05. Muvaffaqiyatsiz uzatilgan paketlar sonining taqsimot qonunini tuzing.",
+      ev: "muvaffaqiyatsiz uzatilgan paket", pl: "Muvaffaqiyatsiz uzatilish ehtimoli", ql: "Muvaffaqiyatli uzatilish ehtimoli",
+      x: "8 ta paketdan muvaffaqiyatsiz uzatilganlari soni" },
+    { id: 15, cat: "C", title: "Kompyuter qurilmalari", n: 5, p: 0.1,
+      text: "5 ta kompyuterning har biri mustaqil ravishda tekshiriladi. Har bir kompyuterda texnik nosozlik aniqlanish ehtimoli 0,1. Nosoz kompyuterlar sonining taqsimot qonunini tuzing.",
+      ev: "nosoz kompyuter", pl: "Nosozlik aniqlanish ehtimoli", ql: "Nosozlik aniqlanmaslik ehtimoli",
+      x: "5 ta kompyuterdan nosozlari soni" },
+
+    { id: 16, cat: "D", title: "Urug'larning unishi", n: 6, p: 0.9,
+      text: "Fermer 6 ta urug' ekdi. Har bir urug'ning unib chiqish ehtimoli 0,9. Unib chiqqan urug'lar sonini X deb olib, taqsimot qonunini tuzing.",
+      ev: "unib chiqqan urug'", pl: "Unib chiqish ehtimoli", ql: "Unib chiqmaslik ehtimoli",
+      x: "6 ta urug'dan unib chiqqanlari soni" },
+    { id: 17, cat: "D", title: "Ko'chatlarning saqlanishi", n: 5, p: 0.8,
+      text: "Issiqxonaga 5 ta ko'chat ekildi. Har bir ko'chatning saqlanib qolish ehtimoli 0,8. Saqlanib qolgan ko'chatlar sonining taqsimot qonunini tuzing.",
+      ev: "saqlanib qolgan ko'chat", pl: "Saqlanib qolish ehtimoli", ql: "Saqlanib qolmaslik ehtimoli",
+      x: "5 ta ko'chatdan saqlanib qolganlari soni" },
+    { id: 18, cat: "D", title: "Hosil sifati", n: 5, p: 0.1,
+      text: "Nazorat uchun 5 ta meva tanlandi. Har bir mevaning standart talablariga javob bermaslik ehtimoli 0,1. Standartga javob bermaydigan mevalar sonining taqsimot qonunini tuzing.",
+      ev: "standartga javob bermaydigan meva", pl: "Standartga javob bermaslik ehtimoli", ql: "Standartga javob berish ehtimoli",
+      x: "5 ta mevadan standartga javob bermaydiganlari soni" },
+    { id: 19, cat: "D", title: "Paxta chigiti", n: 7, p: 0.85,
+      text: "Paxta ekish uchun 7 ta chigit tanlandi. Har bir chigitning unib chiqish ehtimoli 0,85. Unib chiqqan chigitlar sonini X deb olib, taqsimot qonunini tuzing.",
+      ev: "unib chiqqan chigit", pl: "Unib chiqish ehtimoli", ql: "Unib chiqmaslik ehtimoli",
+      x: "7 ta chigitdan unib chiqqanlari soni" },
+    { id: 20, cat: "D", title: "Zararkunanda bilan zararlanish", n: 5, p: 0.2,
+      text: "Daladagi 5 ta o'simlik kuzatuvga olindi. Har bir o'simlikning zararkunanda bilan zararlanish ehtimoli 0,2. Zararlangan o'simliklar sonining taqsimot qonunini tuzing.",
+      ev: "zararlangan o'simlik", pl: "Zararlanish ehtimoli", ql: "Zararlanmaslik ehtimoli",
+      x: "5 ta o'simlikdan zararlanganlari soni" },
+
+    { id: 21, cat: "E", title: "Ikki turdagi mahsulot", n: 4, p: 0.2,
+      text: "Korxonada ishlab chiqarilgan mahsulotlarning 20 foizi A turdagi, 80 foizi B turdagi mahsulotlardan iborat. Tasodifiy ravishda 4 ta mahsulot tanlandi. A turdagi mahsulotlar sonini X deb olib, taqsimot qonunini tuzing.",
+      ev: "A turdagi mahsulot", pl: "A turdagi bo'lish ehtimoli", ql: "B turdagi bo'lish ehtimoli",
+      x: "4 ta mahsulotdan A turdagilari soni",
+      note: "20 foiz = 0,2, shuning uchun p = 0,2 va q = 0,8." },
+    { id: 22, cat: "E", title: "Sifat nazoratining ikki bosqichi", n: 4, p: 0.72, pExpr: "0.9*0.8",
+      text: "Mahsulotning birinchi nazoratdan muvaffaqiyatli o'tish ehtimoli 0,9, ikkinchi nazoratdan muvaffaqiyatli o'tish ehtimoli 0,8. Nazoratlar mustaqil deb hisoblanadi. 4 ta mahsulot ichidan ikkala nazoratdan ham muvaffaqiyatli o'tgan mahsulotlar sonini X deb olib, taqsimot qonunini tuzing.",
+      ev: "ikkala nazoratdan o'tgan mahsulot", pl: "Ikkala nazoratdan o'tish ehtimoli", ql: "Kamida bittasidan o'tmaslik ehtimoli",
+      x: "4 ta mahsulotdan ikkala nazoratdan ham o'tganlari soni",
+      note: "Nazoratlar mustaqil, shuning uchun p = 0,9 · 0,8 = 0,72." },
+    { id: 23, cat: "E", title: "Kompyuter tarmog'i", n: 5, p: 0.95,
+      text: "Tarmoqda 5 ta kanal mavjud. Har bir kanalning normal ishlash ehtimoli 0,95. Normal ishlayotgan kanallar sonini X deb olib: X ning mumkin bo'lgan qiymatlarini; taqsimot qonunini; M(X) ni; D(X) ni aniqlang.",
+      ev: "normal ishlayotgan kanal", pl: "Normal ishlash ehtimoli", ql: "Ishdan chiqish ehtimoli",
+      x: "5 ta kanaldan normal ishlayotganlari soni",
+      extras: [{ kind: "values" }] },
+    { id: 24, cat: "E", title: "Ishlab chiqarish liniyasi", n: 6, p: 0.15,
+      text: "Ishlab chiqarish liniyasida 6 ta detal nazoratdan o'tkaziladi. Har bir detalning nuqsonli bo'lish ehtimoli 0,15. Nuqsonli detallar sonini X deb olib: X ning taqsimot qonunini; P(X ≤ 2) ehtimolini; M(X) matematik kutilmasini; D(X) dispersiyasini hisoblang.",
+      ev: "nuqsonli detal", pl: "Nuqsonli bo'lish ehtimoli", ql: "Nuqsonsiz bo'lish ehtimoli",
+      x: "6 ta detaldan nuqsonlilari soni",
+      extras: [{ kind: "le", k: 2 }] },
+    { id: 25, cat: "E", title: "Aqlli qishloq xo'jaligi modeli", n: 8, p: 0.1,
+      text: "Intellektual monitoring tizimi daladagi 8 ta o'simlikni kuzatadi. Har bir o'simlikda stress holati aniqlanish ehtimoli 0,1. Stress holati aniqlangan o'simliklar sonini X deb olib: X ning mumkin bo'lgan qiymatlarini aniqlang; X ning taqsimot qonunini tuzing; P(X = 0) ni hisoblang; P(X ≥ 2) ni hisoblang; M(X) ni aniqlang; natijani qishloq xo'jaligi monitoringi nuqtayi nazaridan izohlang.",
+      ev: "stress holati aniqlangan o'simlik", pl: "Stress aniqlanish ehtimoli", ql: "Stress aniqlanmaslik ehtimoli",
+      x: "8 ta o'simlikdan stress holati aniqlanganlari soni",
+      extras: [{ kind: "values" }, { kind: "eq", k: 0 }, { kind: "ge", k: 2 }, { kind: "interp" }] }
+  ];
+
+  /* ---------- yordamchi funksiyalar ---------- */
+  var SUP = { "-": "⁻", "0": "⁰", "1": "¹", "2": "²", "3": "³", "4": "⁴", "5": "⁵", "6": "⁶", "7": "⁷", "8": "⁸", "9": "⁹" };
+  function sup(n) { return String(n).split("").map(function (c) { return SUP[c]; }).join(""); }
+  function round(v, d) { var m = Math.pow(10, d); return Math.round(v * m) / m; }
+  function comb(n, k) { var r = 1; for (var i = 1; i <= k; i++) r = r * (n - k + i) / i; return Math.round(r); }
+  function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+  /* Aniq son: 0,1 yoki 0,72 kabi (ortiqcha nollarsiz) */
+  function num(v) { return String(round(v, 10)).replace(".", ","); }
+
+  /* Ehtimol: kamida 3, ko'pi bilan 6 kasr xonasi; juda kichik son standart ko'rinishda (3,906·10⁻¹¹) */
+  function fmt(v) {
+    if (v !== 0 && Math.abs(v) < 1e-5) {
+      var e = Math.floor(Math.log10(Math.abs(v)));
+      var m = round(v / Math.pow(10, e), 3);
+      if (Math.abs(m) >= 10) { m = m / 10; e += 1; }
+      return m.toFixed(3).replace(".", ",") + "·10" + sup(e);
+    }
+    var parts = v.toFixed(6).split(".");
+    var d = parts[1];
+    while (d.length > 3 && d.charAt(d.length - 1) === "0") d = d.slice(0, -1);
+    return parts[0] + "," + d;
+  }
+  function pct(v) { return (v * 100).toFixed(1).replace(".", ",") + "%"; }
+
+  function noteFor(t, k) {
+    if (t.notes) return t.notes(k, t.n);
+    if (k === 0) return cap(t.ev) + " yo'q";
+    if (k === t.n) return k + " ta " + t.ev + " (hammasi)";
+    return k + " ta " + t.ev;
+  }
+
+  /* ---------- asosiy hisob: binomial taqsimot ---------- */
+  function solve(t) {
+    var n = t.n, p = t.p, q = round(1 - p, 12), rows = [], k;
+    for (k = 0; k <= n; k++) {
+      var c = comb(n, k);
+      rows.push({ k: k, c: c, pk: Math.pow(p, k), qk: Math.pow(q, n - k), P: c * Math.pow(p, k) * Math.pow(q, n - k), note: noteFor(t, k) });
+    }
+    var sum = 0, M = 0, M2 = 0, maxP = 0;
+    rows.forEach(function (r) { sum += r.P; M += r.k * r.P; M2 += r.k * r.k * r.P; if (r.P > maxP) maxP = r.P; });
+    var D = M2 - M * M;
+    var s = {
+      n: n, p: p, q: q, rows: rows, sum: sum, csum: Math.pow(2, n),
+      M: M, M2: M2, D: D, sigma: Math.sqrt(D), maxP: maxP,
+      modes: rows.filter(function (r) { return Math.abs(r.P - maxP) < 1e-12; }).map(function (r) { return r.k; })
+    };
+    s.answer = "Nazariy javob: " + rows.map(function (r) { return "P(X=" + r.k + ")=" + fmt(r.P); }).join("; ") + ".";
+    s.extras = (t.extras || []).map(function (e) { return extra(t, e, s); });
+    return s;
+  }
+
+  /* 23–25-topshiriqlardagi qo'shimcha savollar. f(first) — Excel formulasi (first — jadvalning birinchi qatori) */
+  function extra(t, e, s) {
+    var rows = s.rows, n = t.n, i, v, terms;
+    if (e.kind === "values") {
+      return { label: "X ning mumkin bo'lgan qiymatlari", expr: "k = 0, 1, …, n",
+               text: rows.map(function (r) { return r.k; }).join("; ") };
+    }
+    if (e.kind === "eq") {
+      return { label: "P(X = " + e.k + ")", expr: "C(" + n + "; " + e.k + ") · p" + sup(e.k) + " · q" + sup(n - e.k),
+               value: rows[e.k].P, f: function (first) { return "C" + (first + e.k); } };
+    }
+    if (e.kind === "le") {
+      v = 0; terms = [];
+      for (i = 0; i <= e.k; i++) { v += rows[i].P; terms.push("P(X=" + i + ")"); }
+      return { label: "P(X ≤ " + e.k + ")", expr: terms.join(" + "), value: v,
+               f: function (first) { return "SUM(C" + first + ":C" + (first + e.k) + ")"; } };
+    }
+    if (e.kind === "ge") {
+      v = 1; terms = [];
+      for (i = 0; i < e.k; i++) { v -= rows[i].P; terms.push("P(X=" + i + ")"); }
+      return { label: "P(X ≥ " + e.k + ")", expr: "1 − " + terms.join(" − "), value: v,
+               f: function (first) { return "1-SUM(C" + first + ":C" + (first + e.k - 1) + ")"; } };
+    }
+    /* interp — 25-topshiriq uchun xulosa */
+    var p0 = rows[0].P, p1 = rows[1].P, p2 = 1 - p0 - p1;
+    return { interp: "Izoh. O'rtacha hisobda " + n + " ta o'simlikdan M(X) = " + num(round(s.M, 6)) +
+      " tasida, ya'ni taxminan bittasida stress holati aniqlanadi. Hech bir o'simlikda stress bo'lmasligi ehtimoli P(X=0) ≈ " + pct(p0) +
+      ", ko'pi bilan bitta o'simlikda stress bo'lishi ehtimoli " + pct(p0 + p1) +
+      ", ikki va undan ortiq o'simlikda stress aniqlanishi ehtimoli esa P(X≥2) ≈ " + pct(p2) +
+      ". Demak, 0 yoki 1 ta stressli o'simlik odatiy holat. Agar monitoring tizimi 2 va undan ortiq o'simlikda stressni muntazam qayd etsa, " +
+      "haqiqiy stress ehtimoli 0,1 dan yuqori deb taxmin qilinadi: sug'orish, oziqlantirish yoki kasallik va zararkunandalarni tekshirish kerak." };
+  }
+
+  /* =====================================================================
+     Excel (.xlsx) fayl. Tashqi kutubxona ishlatilmaydi: .xlsx — bu ichida
+     XML fayllar bo'lgan ZIP arxiv, uni shu yerning o'zida yig'amiz.
+     Kataklarga formulalar yoziladi (COMBIN, SUMPRODUCT, SQRT ...).
+     ===================================================================== */
+  function x(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+  var XML = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n';
+  var NS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
+  var REL = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+  var PKG = "http://schemas.openxmlformats.org/package/2006/";
+  var CT = "application/vnd.openxmlformats-officedocument.spreadsheetml.";
+  var NAVY = "FF1F3864", BAND = "FFDCE6F1", LINE = "FFBFC7CE";
+  var COLS = [38, 30, 36, 50];           /* A, B, C, D ustunlar eni */
+
+  /* Uslublar: har bir yangi (shrift, fon, chiziq, format) birikmasi uchun bitta raqam */
+  function styleBook() {
+    var fonts = [], borders = [], fmts = [], xfs = [];
+    var fills = ['<fill><patternFill patternType="none"/></fill>', '<fill><patternFill patternType="gray125"/></fill>'];
+    function idx(list, v) { var i = list.indexOf(v); if (i < 0) { list.push(v); i = list.length - 1; } return i; }
+    function id(o) {
+      o = o || {};
+      var font = "<font>" + (o.bold ? "<b/>" : "") + (o.italic ? "<i/>" : "") + '<sz val="' + (o.size || 12) + '"/><color rgb="' + (o.color || "FF000000") + '"/><name val="Times New Roman"/><family val="1"/></font>';
+      var fill = o.fill ? '<fill><patternFill patternType="solid"><fgColor rgb="' + o.fill + '"/><bgColor indexed="64"/></patternFill></fill>' : fills[0];
+      var border = "<border><left/><right/><top/>" + (o.line ? '<bottom style="' + o.line + '"><color rgb="' + (o.line === "medium" ? "FF000000" : LINE) + '"/></bottom>' : "<bottom/>") + "<diagonal/></border>";
+      var nf = o.fmt ? 164 + idx(fmts, o.fmt) : 0;
+      return idx(xfs, '<xf numFmtId="' + nf + '" fontId="' + idx(fonts, font) + '" fillId="' + idx(fills, fill) + '" borderId="' + idx(borders, border) + '" xfId="0" applyFont="1"' +
+        (nf ? ' applyNumberFormat="1"' : "") + (o.fill ? ' applyFill="1"' : "") + (o.line ? ' applyBorder="1"' : "") +
+        ' applyAlignment="1"><alignment horizontal="' + (o.h || "left") + '" vertical="center" wrapText="1"/></xf>');
+    }
+    id({});                               /* 0-uslub: oddiy matn */
+    return {
+      id: id,
+      xml: function () {
+        return XML + '<styleSheet xmlns="' + NS + '">' +
+          (fmts.length ? '<numFmts count="' + fmts.length + '">' + fmts.map(function (f, i) { return '<numFmt numFmtId="' + (164 + i) + '" formatCode="' + x(f) + '"/>'; }).join("") + "</numFmts>" : "") +
+          '<fonts count="' + fonts.length + '">' + fonts.join("") + "</fonts>" +
+          '<fills count="' + fills.length + '">' + fills.join("") + "</fills>" +
+          '<borders count="' + borders.length + '">' + borders.join("") + "</borders>" +
+          '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>' +
+          '<cellXfs count="' + xfs.length + '">' + xfs.join("") + "</cellXfs>" +
+          '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
+      }
+    };
+  }
+
+  /* Bitta varaq: put("B4", qiymat, uslub), merge("A1:D1"), height(qator, balandlik) */
+  function newSheet(styles, str) {
+    var cells = {}, heights = {}, merges = [];
+    return {
+      put: function (addr, value, o) { cells[addr] = { v: value, s: styles.id(o) }; },
+      merge: function (ref) { merges.push(ref); },
+      height: function (row, h) { heights[row] = h; },
+      xml: function (selected) {
+        var byRow = {}, last = 1;
+        Object.keys(cells).forEach(function (a) {
+          var r = +a.slice(1);
+          (byRow[r] = byRow[r] || []).push(a);
+          if (r > last) last = r;
+        });
+        var data = Object.keys(byRow).map(Number).sort(function (a, b) { return a - b; }).map(function (r) {
+          var row = byRow[r].sort().map(function (a) {
+            var c = cells[a], v = c.v, head = '<c r="' + a + '" s="' + c.s + '"';
+            if (typeof v === "number") return head + "><v>" + v + "</v></c>";
+            if (typeof v === "string") return head + ' t="s"><v>' + str(v) + "</v></c>";
+            return head + "><f>" + x(v.formula) + "</f><v>" + v.result + "</v></c>";
+          }).join("");
+          return '<row r="' + r + '"' + (heights[r] ? ' ht="' + heights[r] + '" customHeight="1"' : "") + ">" + row + "</row>";
+        }).join("");
+        return XML + '<worksheet xmlns="' + NS + '"><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><dimension ref="A1:D' + last + '"/>' +
+          '<sheetViews><sheetView' + (selected ? ' tabSelected="1"' : "") + ' workbookViewId="0"/></sheetViews><sheetFormatPr defaultRowHeight="15.75"/>' +
+          "<cols>" + COLS.map(function (w, i) { return '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + w + '" customWidth="1"/>'; }).join("") + "</cols>" +
+          "<sheetData>" + data + "</sheetData>" +
+          '<mergeCells count="' + merges.length + '">' + merges.map(function (m) { return '<mergeCell ref="' + m + '"/>'; }).join("") + "</mergeCells>" +
+          '<pageMargins left="0.5" right="0.5" top="0.6" bottom="0.6" header="0.3" footer="0.3"/>' +
+          '<pageSetup paperSize="9" orientation="landscape" fitToHeight="0"/></worksheet>';
+      }
+    };
+  }
+
+  /* Bitta topshiriqni varaqqa joylash (namunadagi jadval tartibida) */
+  function fillSheet(ws, t) {
+    var s = solve(t), n = t.n;
+    function nf(v) { return (v !== 0 && Math.abs(v) < 1e-5) ? "0.000E+00" : "0.000###"; }
+    function lines(text, perLine) { return Math.max(1, Math.ceil(text.length / perLine)); }
+
+    /* sarlavha */
+    ws.merge("A1:D1");
+    ws.put("A1", t.id + "-topshiriq. " + t.title, { size: 16, bold: true, h: "center" });
+    ws.height(1, 28);
+    var sub = "X — " + t.x + ". Excel formulalari yordamida binomial taqsimot hisoblanadi." + (t.note ? " " + t.note : "");
+    ws.merge("A2:D2");
+    ws.put("A2", sub, { italic: true, color: NAVY });
+    ws.height(2, 17 * lines(sub, 150));
+
+    /* parametrlar: B4 = n, D4 = p, B5 = q */
+    ws.put("A4", "Tajriba soni (n)", { line: "thin" });
+    ws.put("B4", n, { h: "center", line: "thin" });
+    ws.put("C4", t.pl + " (p)", { h: "center", line: "thin" });
+    ws.put("D4", t.pExpr ? { formula: t.pExpr, result: t.p } : t.p, { h: "right", line: "thin" });
+    ws.put("A5", t.ql + " (q)", { line: "thin" });
+    ws.put("B5", { formula: "1-D4", result: s.q }, { h: "center", line: "thin" });
+    ws.put("C5", "Nazariy model", { h: "center", line: "thin" });
+    ws.put("D5", "Binomial B(n; p)", { line: "thin" });
+
+    /* taqsimot jadvali */
+    var head = 7, first = 8, last = first + n, tot = last + 1;
+    ws.put("A" + head, "X = k", { bold: true, h: "center", line: "medium" });
+    ws.put("B" + head, "Kombinatsiyalar soni C(" + n + ";k)", { bold: true, h: "center", line: "medium" });
+    ws.put("C" + head, "P(X = k)", { bold: true, h: "center", line: "medium" });
+    ws.put("D" + head, "Holat izohi", { bold: true, h: "center", line: "medium" });
+    ws.height(head, 24);
+    s.rows.forEach(function (r) {
+      var i = first + r.k;
+      ws.put("A" + i, r.k, { h: "center", line: "thin" });
+      ws.put("B" + i, { formula: "COMBIN($B$4,A" + i + ")", result: r.c }, { h: "center", line: "thin" });
+      ws.put("C" + i, { formula: "B" + i + "*$D$4^A" + i + "*$B$5^($B$4-A" + i + ")", result: r.P }, { h: "center", line: "thin", fmt: nf(r.P) });
+      ws.put("D" + i, r.note, { line: "thin" });
+    });
+    var rngA = "A" + first + ":A" + last, rngB = "B" + first + ":B" + last, rngC = "C" + first + ":C" + last;
+    var band = { bold: true, h: "center", color: NAVY, fill: BAND };
+    ws.put("A" + tot, "Jami / tekshiruv", band);
+    ws.put("B" + tot, { formula: "SUM(" + rngB + ")", result: s.csum }, band);
+    ws.put("C" + tot, { formula: "SUM(" + rngC + ")", result: 1 }, { bold: true, h: "center", color: NAVY, fill: BAND, fmt: "0.000" });
+    ws.put("D" + tot, "Ehtimollar yig'indisi 1 bo'lishi kerak", band);
+
+    /* qo'shimcha xarakteristikalar */
+    var ch = tot + 2, rM = ch + 1, rM2 = ch + 2, rD = ch + 3, rS = ch + 4;
+    ws.put("A" + ch, "Qo'shimcha xarakteristika", { bold: true, h: "center", line: "medium" });
+    ws.put("B" + ch, "Hisoblash ifodasi", { bold: true, h: "center", line: "medium" });
+    ws.put("C" + ch, "Natija", { bold: true, h: "center", line: "medium" });
+    ws.height(ch, 24);
+    function charRow(r, label, expr, value, f) {
+      ws.put("A" + r, label, { line: "thin" });
+      ws.put("B" + r, expr, { line: "thin" });
+      ws.put("C" + r, value, { h: "center", line: "thin", fmt: f });
+    }
+    charRow(rM, "Matematik kutilma M(X)", "Σ k·P(X=k)", { formula: "SUMPRODUCT(" + rngA + "," + rngC + ")", result: s.M }, "0.000###");
+    charRow(rM2, "Ikkinchi moment M(X²)", "Σ k²·P(X=k)", { formula: "SUMPRODUCT(" + rngA + "^2," + rngC + ")", result: s.M2 }, "0.000###");
+    charRow(rD, "Dispersiya D(X)", "M(X²) − [M(X)]²", { formula: "C" + rM2 + "-C" + rM + "^2", result: s.D }, "0.000###");
+    charRow(rS, "O'rtacha kvadratik chetlanish σ(X)", "√D(X)", { formula: "SQRT(C" + rD + ")", result: s.sigma }, "0.000###");
+
+    var r = rS + 1, interp = null;
+    s.extras.forEach(function (e) {
+      if (e.interp) { interp = e.interp; return; }
+      if (e.text) charRow(r, e.label, e.expr, e.text);
+      else charRow(r, e.label, e.expr, { formula: e.f(first), result: e.value }, nf(e.value));
+      r++;
+    });
+
+    r++;
+    ws.merge("A" + r + ":D" + r);
+    ws.put("A" + r, s.answer, { italic: true, color: NAVY });
+    ws.height(r, 17 * lines(s.answer, 150));
+    if (interp) {
+      r += 2;
+      ws.merge("A" + r + ":D" + r);
+      ws.put("A" + r, interp, { color: NAVY, fill: BAND });
+      ws.height(r, 17 * lines(interp, 140));
+    }
+  }
+
+  /* ZIP arxiv (siqmasdan saqlash). files: [{ name, text }] */
+  var crcTable = null;
+  function crc32(b) {
+    var i, j, c;
+    if (!crcTable) {
+      crcTable = [];
+      for (i = 0; i < 256; i++) { c = i; for (j = 0; j < 8; j++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1); crcTable[i] = c >>> 0; }
+    }
+    c = 0xFFFFFFFF;
+    for (i = 0; i < b.length; i++) c = crcTable[(c ^ b[i]) & 255] ^ (c >>> 8);
+    return (c ^ 0xFFFFFFFF) >>> 0;
+  }
+  function zip(files) {
+    var enc = new TextEncoder(), d = new Date(), parts = [], size = 0, central = 0;
+    var time = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1);
+    var date = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
+    var items = files.map(function (f) { var data = enc.encode(f.text); return { name: enc.encode(f.name), data: data, crc: crc32(data), at: 0 }; });
+    function header(it, isCentral) {
+      var h = new DataView(new ArrayBuffer(isCentral ? 46 : 30)), o = 4;
+      h.setUint32(0, isCentral ? 0x02014b50 : 0x04034b50, true);
+      if (isCentral) { h.setUint16(o, 20, true); o += 2; }           /* arxivni yaratgan versiya */
+      h.setUint16(o, 20, true);                                      /* ochish uchun kerakli versiya */
+      h.setUint16(o + 4, 0, true);                                   /* usul: 0 — siqilmagan */
+      h.setUint16(o + 6, time, true); h.setUint16(o + 8, date, true);
+      h.setUint32(o + 10, it.crc, true);
+      h.setUint32(o + 14, it.data.length, true); h.setUint32(o + 18, it.data.length, true);
+      h.setUint16(o + 22, it.name.length, true);
+      if (isCentral) h.setUint32(42, it.at, true);                   /* faylning arxivdagi o'rni */
+      return new Uint8Array(h.buffer);
+    }
+    function push(u8) { parts.push(u8); size += u8.length; }
+    items.forEach(function (it) { it.at = size; push(header(it, false)); push(it.name); push(it.data); });
+    central = size;
+    items.forEach(function (it) { push(header(it, true)); push(it.name); });
+    var end = new DataView(new ArrayBuffer(22));
+    end.setUint32(0, 0x06054b50, true);
+    end.setUint16(8, items.length, true); end.setUint16(10, items.length, true);
+    end.setUint32(12, size - central, true); end.setUint32(16, central, true);
+    push(new Uint8Array(end.buffer));
+    var out = new Uint8Array(size), at = 0;
+    parts.forEach(function (p) { out.set(p, at); at += p.length; });
+    return out;
+  }
+
+  /* Bir yoki bir nechta topshiriq uchun tayyor .xlsx fayl (Uint8Array) */
+  function buildXlsx(tasks) {
+    var styles = styleBook(), strings = [], seen = {}, uses = 0;
+    function str(s) { uses++; var key = "$" + s; if (!(key in seen)) { seen[key] = strings.length; strings.push(s); } return seen[key]; }
+    var sheets = tasks.map(function (t, i) {
+      var ws = newSheet(styles, str);
+      fillSheet(ws, t);
+      return { name: t.id + "-topshiriq", xml: ws.xml(i === 0) };
+    });
+    var count = sheets.length;
+    var files = [
+      { name: "[Content_Types].xml", text: XML + '<Types xmlns="' + PKG + 'content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>' +
+          '<Override PartName="/xl/workbook.xml" ContentType="' + CT + 'sheet.main+xml"/>' +
+          sheets.map(function (s, i) { return '<Override PartName="/xl/worksheets/sheet' + (i + 1) + '.xml" ContentType="' + CT + 'worksheet+xml"/>'; }).join("") +
+          '<Override PartName="/xl/styles.xml" ContentType="' + CT + 'styles+xml"/><Override PartName="/xl/sharedStrings.xml" ContentType="' + CT + 'sharedStrings+xml"/></Types>' },
+      { name: "_rels/.rels", text: XML + '<Relationships xmlns="' + PKG + 'relationships"><Relationship Id="rId1" Type="' + REL + '/officeDocument" Target="xl/workbook.xml"/></Relationships>' },
+      { name: "xl/workbook.xml", text: XML + '<workbook xmlns="' + NS + '" xmlns:r="' + REL + '"><bookViews><workbookView xWindow="0" yWindow="0" windowWidth="24000" windowHeight="12000"/></bookViews><sheets>' +
+          sheets.map(function (s, i) { return '<sheet name="' + x(s.name) + '" sheetId="' + (i + 1) + '" r:id="rId' + (i + 1) + '"/>'; }).join("") +
+          '</sheets><calcPr calcId="191029"/></workbook>' },
+      { name: "xl/_rels/workbook.xml.rels", text: XML + '<Relationships xmlns="' + PKG + 'relationships">' +
+          sheets.map(function (s, i) { return '<Relationship Id="rId' + (i + 1) + '" Type="' + REL + '/worksheet" Target="worksheets/sheet' + (i + 1) + '.xml"/>'; }).join("") +
+          '<Relationship Id="rId' + (count + 1) + '" Type="' + REL + '/styles" Target="styles.xml"/><Relationship Id="rId' + (count + 2) + '" Type="' + REL + '/sharedStrings" Target="sharedStrings.xml"/></Relationships>' },
+      { name: "xl/styles.xml", text: styles.xml() },
+      { name: "xl/sharedStrings.xml", text: XML + '<sst xmlns="' + NS + '" count="' + uses + '" uniqueCount="' + strings.length + '">' +
+          strings.map(function (s) { return '<si><t xml:space="preserve">' + x(s) + "</t></si>"; }).join("") + "</sst>" }
+    ];
+    sheets.forEach(function (s, i) { files.push({ name: "xl/worksheets/sheet" + (i + 1) + ".xml", text: s.xml }); });
+    return zip(files);
+  }
+
+  root.TJ = { CATS: CATS, TASKS: TASKS, solve: solve, buildXlsx: buildXlsx, fmt: fmt, num: num };
+})(typeof window !== "undefined" ? window : globalThis);
+
+
+/* =====================================================================
+   2-QISM. Sahifa (brauzer)
+   ===================================================================== */
+if (typeof document !== "undefined") (function () {
+  "use strict";
+  var TJ = window.TJ, CATS = TJ.CATS, TASKS = TJ.TASKS, fmt = TJ.fmt, num = TJ.num;
+  var board = document.getElementById("board");
+  var out = document.getElementById("solution");
+  var findMsg = document.getElementById("findMsg");
+  var input = document.getElementById("q");
+  var state = { cat: null, task: null };   /* cat: "A".."E" yoki null; task: 1..25 yoki null */
+
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function byId(id) { return TASKS.filter(function (t) { return t.id === id; })[0]; }
+  function inCat(c) { return TASKS.filter(function (t) { return t.cat === c; }); }
+  function catOf(id) { return CATS.filter(function (c) { return c.id === id; })[0]; }
+
+  /* ---------- A–E ustunli tanlash jadvali ---------- */
+  function drawBoard() {
+    var h = '<button type="button" class="corner' + (!state.cat && !state.task ? " on" : "") + '" data-all title="Tanlovni tozalash">1–25</button>';
+    CATS.forEach(function (c) {
+      h += '<button type="button" class="colh' + (state.cat === c.id && !state.task ? " on" : "") + '" data-cat="' + c.id + '" title="' + esc(c.name) + '"><b>' + c.id + "</b><span>" + esc(c.name) + "</span></button>";
+    });
+    var rowCount = Math.max.apply(null, CATS.map(function (c) { return inCat(c.id).length; }));
+    for (var r = 0; r < rowCount; r++) {
+      h += '<div class="rowh">' + (r + 1) + "</div>";
+      CATS.forEach(function (c) {
+        var t = inCat(c.id)[r], cls = "cell";
+        if (!t) { h += "<div></div>"; return; }      /* bu kategoriyada topshiriq kamroq */
+        if (state.task === t.id) cls += " on";
+        else if (state.cat === c.id && !state.task) cls += " incol";
+        h += '<button type="button" class="' + cls + '" data-task="' + t.id + '" aria-pressed="' + (state.task === t.id) + '" title="' + t.id + "-topshiriq. " + esc(t.title) + '">' +
+          '<span class="no">' + t.id + '</span><span class="tt">' + esc(t.title) + '</span><span class="np">n = ' + t.n + ", p = " + num(t.p) + "</span></button>";
+      });
+    }
+    board.innerHTML = h;
+  }
+
+  /* ---------- bitta topshiriq yechimi (namunadagi jadval ko'rinishida) ---------- */
+  function sheetHTML(t) {
+    var s = TJ.solve(t), n = t.n, c = catOf(t.cat);
+    var h = '<article class="sheet" id="t' + t.id + '">';
+    h += "<h3>" + t.id + "-topshiriq. " + esc(t.title) + "</h3>";
+    h += '<p class="cond">' + esc(t.text) + "</p>";
+    h += '<p class="xdef">X — ' + esc(t.x) + ". Binomial taqsimot formulasi bo'yicha hisoblanadi: P(X = k) = C(n; k) · p<sup>k</sup> · q<sup>n−k</sup>." + (t.note ? " " + esc(t.note) : "") + "</p>";
+
+    h += '<div class="scroll"><table class="params"><tbody>' +
+      "<tr><td>Tajriba soni (n)</td><td>" + n + "</td><td>" + esc(t.pl) + ' (p)</td><td class="n">' + num(t.p) + "</td></tr>" +
+      "<tr><td>" + esc(t.ql) + " (q)</td><td>" + num(s.q) + "</td><td>Nazariy model</td><td>Binomial B(n; p) = B(" + n + "; " + num(t.p) + ")</td></tr>" +
+      "</tbody></table></div>";
+
+    h += '<div class="scroll"><table class="dist"><thead><tr><th>X = k</th><th>Kombinatsiyalar soni C(' + n + ";k)</th><th>P(X = k)</th><th>Holat izohi</th></tr></thead><tbody>";
+    s.rows.forEach(function (r) { h += "<tr><td>" + r.k + "</td><td>" + r.c + "</td><td>" + fmt(r.P) + "</td><td>" + esc(r.note) + "</td></tr>"; });
+    h += '<tr class="total"><td>Jami / tekshiruv</td><td>' + s.csum + "</td><td>" + s.sum.toFixed(3).replace(".", ",") + "</td><td>Ehtimollar yig'indisi 1 bo'lishi kerak</td></tr></tbody></table></div>";
+
+    h += '<div class="scroll"><table class="chars"><thead><tr><th>Qo\'shimcha xarakteristika</th><th>Hisoblash ifodasi</th><th>Natija</th><th>Tekshiruv</th></tr></thead><tbody>' +
+      "<tr><td>Matematik kutilma M(X)</td><td>Σ k·P(X=k)</td><td>" + fmt(s.M) + "</td><td>n·p = " + n + "·" + num(t.p) + " = " + num(n * t.p) + "</td></tr>" +
+      "<tr><td>Ikkinchi moment M(X²)</td><td>Σ k²·P(X=k)</td><td>" + fmt(s.M2) + "</td><td></td></tr>" +
+      "<tr><td>Dispersiya D(X)</td><td>M(X²) − [M(X)]²</td><td>" + fmt(s.D) + "</td><td>n·p·q = " + num(n * t.p * s.q) + "</td></tr>" +
+      "<tr><td>O'rtacha kvadratik chetlanish σ(X)</td><td>√D(X)</td><td>" + fmt(s.sigma) + "</td><td></td></tr>";
+    var interp = "";
+    s.extras.forEach(function (e) {
+      if (e.interp) { interp = e.interp; return; }
+      h += "<tr><td>" + esc(e.label) + "</td><td>" + esc(e.expr) + "</td><td>" + (e.text ? esc(e.text) : fmt(e.value)) + "</td><td></td></tr>";
+    });
+    h += "</tbody></table></div>";
+
+    h += '<p class="answer">' + esc(s.answer) + "</p>";
+    if (interp) h += '<p class="interp">' + esc(interp) + "</p>";
+
+    /* taqsimotning ustunli diagrammasi */
+    h += '<p class="cap">Taqsimot diagrammasi. Eng ehtimolli qiymat: X = ' + s.modes.join(" va ") + " (yashil ustun).</p>";
+    h += '<div class="plot" role="img" aria-label="P(X = k) ehtimollari diagrammasi">';
+    s.rows.forEach(function (r) {
+      h += '<div class="col' + (s.modes.indexOf(r.k) >= 0 ? " mode" : "") + '"><span class="v">' + (r.P < 0.0005 ? "≈0" : r.P.toFixed(3).replace(".", ",")) + '</span><span class="b" style="height:' + Math.max(2, Math.round(r.P / s.maxP * 140)) + 'px"></span></div>';
+    });
+    h += '</div><div class="plot-x" aria-hidden="true">';
+    s.rows.forEach(function (r) { h += "<span>" + r.k + "</span>"; });
+    h += "</div>";
+
+    h += "<details><summary>Har bir qator qanday hisoblangani</summary><ol>";
+    s.rows.forEach(function (r) {
+      h += "<li>P(X = " + r.k + ") = C(" + n + "; " + r.k + ") · " + num(t.p) + "<sup>" + r.k + "</sup> · " + num(s.q) + "<sup>" + (n - r.k) + "</sup> = " +
+        r.c + " · " + fmt(r.pk) + " · " + fmt(r.qk) + " = " + fmt(r.P) + "</li>";
+    });
+    h += "</ol></details>";
+
+    h += '<div class="foot"><button type="button" class="btn go" data-xlsx="' + t.id + '" data-name="2-tajriba_' + t.id + '-topshiriq">Excel faylini yuklab olish</button>' +
+      "<span>" + c.id + " kategoriya: " + esc(c.name) + '</span><span class="msg" role="status"></span></div>';
+    return h + "</article>";
+  }
+
+  function drawSolution() {
+    var h = "";
+    if (state.task) {
+      var t = byId(state.task);
+      h += '<div class="bar"><div><h2>' + t.id + "-topshiriq yechimi</h2></div>" +
+        '<div class="acts"><button type="button" class="btn" data-print>Chop etish</button></div></div>' + sheetHTML(t);
+    } else if (state.cat) {
+      var c = catOf(state.cat), list = inCat(c.id);
+      h += '<div class="bar"><div><h2>' + c.id + " kategoriya: " + list[0].id + "–" + list[list.length - 1].id + "-topshiriqlar</h2><p>" + esc(c.name) + "</p></div>" +
+        '<div class="acts"><button type="button" class="btn go" data-xlsx="' + list.map(function (t) { return t.id; }).join(",") + '" data-name="2-tajriba_' + c.id + '-kategoriya">Beshtasini bitta Excel faylda yuklab olish</button>' +
+        '<button type="button" class="btn" data-print>Chop etish</button><span class="msg" role="status"></span></div></div>';
+      list.forEach(function (t) { h += sheetHTML(t); });
+    } else {
+      h += '<div class="empty"><h2>Hali topshiriq tanlanmagan</h2>' +
+        "<p>Yuqoridagi jadvaldan o'z topshirig'ingiz raqamini bosing yoki raqamni maydonga yozing. Yechim namunadagi jadval ko'rinishida chiqadi.</p>" +
+        '<div class="acts"><button type="button" class="btn" data-xlsx="' + TASKS.map(function (t) { return t.id; }).join(",") + '" data-name="2-tajriba_barcha-topshiriqlar">25 ta yechimni bitta Excel faylda yuklab olish</button><span class="msg" role="status"></span></div></div>';
+    }
+    out.innerHTML = h;
+  }
+
+  function show(next, scroll) {
+    state = next;
+    findMsg.textContent = "";
+    drawBoard();
+    drawSolution();
+    var hash = state.task ? "#" + state.task : state.cat ? "#" + state.cat : "";
+    if (location.hash !== hash) history.replaceState(null, "", hash || location.pathname + location.search);
+    document.title = (state.task ? state.task + "-topshiriq · " : state.cat ? state.cat + " kategoriya · " : "") + "2-tajriba ishi";
+    if (scroll) out.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+  }
+
+  /* "7", "7-topshiriq", "C", "c kategoriya" yoki nomdagi so'z */
+  function plain(s) { return s.toLowerCase().replace(/[‘’ʻʼ`']/g, ""); }
+  function parse(text) {
+    var v = plain(text.trim());
+    if (!v) return null;
+    var m = v.match(/^#?(\d{1,2})(\s*-?\s*topshiriq)?$/);
+    if (m) { var id = +m[1]; return byId(id) ? { cat: byId(id).cat, task: id } : "Bunday topshiriq yo'q. Raqam 1 dan 25 gacha bo'lishi kerak."; }
+    m = v.match(/^#?([a-e])(\s*-?\s*kategoriya)?$/);
+    if (m) return { cat: m[1].toUpperCase(), task: null };
+    var hit = TASKS.filter(function (t) { return plain(t.title + " " + t.text).indexOf(v) >= 0; });
+    if (hit.length) return { cat: hit[0].cat, task: hit[0].id };
+    return "Topilmadi. 1–25 oralig'idagi raqamni yoki A–E harflaridan birini yozing.";
+  }
+
+  /* ---------- Excel faylini yuklab olish ---------- */
+  function download(btn) {
+    var ids = btn.getAttribute("data-xlsx").split(",").map(Number);
+    var msg = btn.parentNode.querySelector(".msg");
+    try {
+      var bytes = TJ.buildXlsx(ids.map(byId));
+      var url = URL.createObjectURL(new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+      var a = document.createElement("a");
+      a.href = url; a.download = btn.getAttribute("data-name") + ".xlsx";
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+      if (msg) msg.textContent = "";
+    } catch (err) {
+      if (msg) msg.textContent = "Excel fayli tayyorlanmadi. Sahifani yangilab, boshqa brauzerda (Chrome, Edge yoki Firefox) qayta urinib ko'ring.";
+    }
+  }
+
+  /* ---------- hodisalar ---------- */
+  board.addEventListener("click", function (e) {
+    var b = e.target.closest("button");
+    if (!b) return;
+    if (b.hasAttribute("data-all")) return show({ cat: null, task: null }, false);
+    if (b.hasAttribute("data-cat")) return show({ cat: b.getAttribute("data-cat"), task: null }, true);
+    var id = +b.getAttribute("data-task");
+    show({ cat: byId(id).cat, task: id }, true);
+  });
+  out.addEventListener("click", function (e) {
+    var b = e.target.closest("button");
+    if (!b) return;
+    if (b.hasAttribute("data-xlsx")) download(b);
+    else if (b.hasAttribute("data-print")) window.print();
+  });
+  document.getElementById("find").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var r = parse(input.value);
+    if (r === null) { findMsg.textContent = "Avval raqam yoki harf yozing."; return; }
+    if (typeof r === "string") { findMsg.textContent = r; return; }
+    show(r, true);
+  });
+  window.addEventListener("beforeprint", function () {
+    [].forEach.call(document.querySelectorAll("details"), function (d) { d.open = true; });
+  });
+  function fromHash() {
+    var r = parse(decodeURIComponent(location.hash.replace(/^#/, "")));
+    show(r && typeof r === "object" ? r : { cat: null, task: null }, false);
+  }
+  window.addEventListener("hashchange", fromHash);
+  fromHash();
+})();
+</script>
+</body>
+</html>
