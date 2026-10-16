@@ -94,7 +94,7 @@ button{cursor:pointer}
 .sheet .dist tr.total td:last-child{text-align:center}
 .sheet .chars th:first-child,.sheet .chars td:first-child{text-align:left}
 .sheet .chars td:nth-child(3){text-align:center;font-variant-numeric:tabular-nums}
-.sheet .chars td:nth-child(4){color:var(--muted)}
+.sheet .chars td:nth-child(4){color:var(--navy);font-style:italic}
 .sheet .answer{font-style:italic;color:var(--navy);margin:0 0 20px}
 .sheet .interp{margin:0 0 20px;padding:12px 14px;background:var(--band);color:var(--navy)}
 .sheet .foot{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;font-family:var(--sans);font-size:15px;color:var(--muted)}
@@ -109,10 +109,9 @@ button{cursor:pointer}
 .plot-x{display:flex;gap:6px;margin:4px 0 22px;padding:0 2px;font-family:var(--sans);font-size:13px;color:var(--muted)}
 .plot-x span{flex:1 1 0;text-align:center}
 
-details{margin:0 0 20px;font-size:17px}
-summary{cursor:pointer;font-family:var(--sans);font-size:15px;font-weight:600;padding:6px 0}
-details ol{margin:8px 0 0;padding-left:0;list-style:none;overflow-x:auto}
-details li{padding:3px 0;white-space:nowrap}
+.steps{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin:0 0 22px}
+.step{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 8px;border:1px solid #e3e7ea;font-family:"Cambria Math","STIX Two Math",var(--serif);font-size:16px;text-align:center}
+.step b{font-weight:400;border:1px solid var(--ink);padding:2px 8px;margin-top:2px}
 
 footer{border-top:1px solid var(--grid);padding:18px 0 40px;color:var(--muted);font-size:14px}
 
@@ -128,12 +127,11 @@ footer{border-top:1px solid var(--grid);padding:18px 0 40px;color:var(--muted);f
 }
 @media print{
   body{background:#fff}
-  .top,.picker,.bar .acts,.sheet .foot,footer,details summary{display:none!important}
+  .top,.picker,.bar .acts,.sheet .foot,footer{display:none!important}
   .solution{margin:0}
   .sheet{border:0;padding:0;margin:0;break-after:page}
   .sheet:last-child{break-after:auto}
   .scroll{overflow:visible}
-  details ol{overflow:visible}
   .sheet .dist tr.total td,.sheet .interp,.plot .b{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
 </style>
@@ -310,25 +308,39 @@ footer{border-top:1px solid var(--grid);padding:18px 0 40px;color:var(--muted);f
   /* Aniq son: 0,1 yoki 0,72 kabi (ortiqcha nollarsiz) */
   function num(v) { return String(round(v, 10)).replace(".", ","); }
 
-  /* Ehtimol: kamida 3, ko'pi bilan 6 kasr xonasi; juda kichik son standart ko'rinishda (3,906·10⁻¹¹) */
+  var SUB = { "0": "₀", "1": "₁", "2": "₂", "3": "₃", "4": "₄", "5": "₅", "6": "₆", "7": "₇", "8": "₈", "9": "₉" };
+  function sub(n) { return String(n).split("").map(function (c) { return SUB[c]; }).join(""); }
+
+  /* Juda kichik son: 3,906·10⁻¹¹ */
+  function expo(v, digits) {
+    var e = Math.floor(Math.log10(Math.abs(v)));
+    var m = round(v / Math.pow(10, e), digits);
+    if (Math.abs(m) >= 10) { m = m / 10; e += 1; }
+    return m.toFixed(digits).replace(".", ",") + "·10" + sup(e);
+  }
+  /* Ehtimol jadvalda: 6 kasr xonasi (0,262144) */
   function fmt(v) {
-    if (v !== 0 && Math.abs(v) < 1e-5) {
-      var e = Math.floor(Math.log10(Math.abs(v)));
-      var m = round(v / Math.pow(10, e), 3);
-      if (Math.abs(m) >= 10) { m = m / 10; e += 1; }
-      return m.toFixed(3).replace(".", ",") + "·10" + sup(e);
-    }
-    var parts = v.toFixed(6).split(".");
-    var d = parts[1];
-    while (d.length > 3 && d.charAt(d.length - 1) === "0") d = d.slice(0, -1);
-    return parts[0] + "," + d;
+    if (v !== 0 && Math.abs(v) < 5e-7) return expo(v, 3);
+    return v.toFixed(6).replace(".", ",");
+  }
+  /* Nazariy javobda: 4 kasr xonasi (0,2621), juda kichik bo'lsa bitta qiymatli raqam (0,00006) */
+  function fmt4(v) {
+    if (v === 0 || v >= 1e-4) return v.toFixed(4).replace(".", ",");
+    if (v >= 5e-7) return String(+v.toPrecision(1)).replace(".", ",").replace(/^(\d)e-(\d+)$/, function (a, d, e) { return "0," + new Array(+e).join("0") + d; });
+    return expo(v, 1);
+  }
+  /* Aniq qiymat (0,8⁶ = 0,262144) */
+  function ex(v) {
+    if (v === 0) return "0";
+    if (Math.abs(v) < 1e-6) return expo(v, 4);
+    return String(+v.toPrecision(10)).replace(".", ",");
   }
   function pct(v) { return (v * 100).toFixed(1).replace(".", ",") + "%"; }
 
   function noteFor(t, k) {
     if (t.notes) return t.notes(k, t.n);
-    if (k === 0) return cap(t.ev) + " yo'q";
-    if (k === t.n) return k + " ta " + t.ev + " (hammasi)";
+    if (k === 0) return "Hech bir " + t.ev + " yo'q";
+    if (k === t.n) return "Barcha " + k + " ta " + t.ev;
     return k + " ta " + t.ev;
   }
 
@@ -347,8 +359,25 @@ footer{border-top:1px solid var(--grid);padding:18px 0 40px;color:var(--muted);f
       M: M, M2: M2, D: D, sigma: Math.sqrt(D), maxP: maxP,
       modes: rows.filter(function (r) { return Math.abs(r.P - maxP) < 1e-12; }).map(function (r) { return r.k; })
     };
-    s.answer = "Nazariy javob: " + rows.map(function (r) { return "P(X=" + r.k + ")=" + fmt(r.P); }).join("; ") + ".";
+    s.answer = "Nazariy javob: " + rows.map(function (r) { return "P(X=" + r.k + ")=" + fmt4(r.P); }).join("; ") + ".";
     s.extras = (t.extras || []).map(function (e) { return extra(t, e, s); });
+
+    /* Har bir P(X = k) ning qo'lda hisoblanishi (rasmdagi pastki qator) */
+    s.steps = rows.map(function (r) {
+      return {
+        f1: "P(X = " + r.k + ") = C" + sub(n) + sup(r.k) + " · " + num(p) + sup(r.k) + " · " + num(q) + sup(n - r.k),
+        f2: "= " + r.c + " · " + ex(r.pk) + " · " + ex(r.qk),
+        res: "P(X = " + r.k + ") = " + fmt(r.P)
+      };
+    });
+    /* Formulalar orqali tekshiruv (rasmdagi D ustuni) */
+    var np = n * p, npq = n * p * q;
+    s.checks = {
+      M: "M(X) = np = " + n + " × " + num(p) + " = " + ex(np),
+      M2: "M(X²) = npq + (np)² = " + ex(npq) + " + " + ex(np * np) + " = " + ex(npq + np * np),
+      D: "D(X) = npq = " + n + " × " + num(p) + " × " + num(q) + " = " + ex(npq),
+      S: "σ(X) = √" + ex(npq) + " ≈ " + Math.sqrt(npq).toFixed(4).replace(".", ",")
+    };
     return s;
   }
 
@@ -396,23 +425,28 @@ footer{border-top:1px solid var(--grid);padding:18px 0 40px;color:var(--muted);f
   var REL = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
   var PKG = "http://schemas.openxmlformats.org/package/2006/";
   var CT = "application/vnd.openxmlformats-officedocument.spreadsheetml.";
-  var NAVY = "FF1F3864", BAND = "FFDCE6F1", LINE = "FFBFC7CE";
-  var COLS = [38, 30, 36, 50];           /* A, B, C, D ustunlar eni */
+  var NAVY = "FF1F3864", BAND = "FFDCE6F1", LINE = "FFBFC7CE", DOT = "FF8C8C8C", BLACK = "FF000000", BLUE = "FF0000FF";
+  /* Ustunlar eni: A–D jadval, E shart va formula, F dan keyin P(X = k) hisoblari */
+  var COLS = [30, 28, 24, 46, 58];
+  function colW(i) { return i < COLS.length ? COLS[i] : 30; }
+  function L(i) { return String.fromCharCode(65 + i); }
 
   /* Uslublar: har bir yangi (shrift, fon, chiziq, format) birikmasi uchun bitta raqam */
   function styleBook() {
     var fonts = [], borders = [], fmts = [], xfs = [];
     var fills = ['<fill><patternFill patternType="none"/></fill>', '<fill><patternFill patternType="gray125"/></fill>'];
     function idx(list, v) { var i = list.indexOf(v); if (i < 0) { list.push(v); i = list.length - 1; } return i; }
+    function side(tag, b) { return b ? "<" + tag + ' style="' + b[0] + '"><color rgb="' + b[1] + '"/></' + tag + ">" : "<" + tag + "/>"; }
     function id(o) {
       o = o || {};
-      var font = "<font>" + (o.bold ? "<b/>" : "") + (o.italic ? "<i/>" : "") + '<sz val="' + (o.size || 12) + '"/><color rgb="' + (o.color || "FF000000") + '"/><name val="Times New Roman"/><family val="1"/></font>';
+      var bd = o.border || {};
+      var font = "<font>" + (o.bold ? "<b/>" : "") + (o.italic ? "<i/>" : "") + '<sz val="' + (o.size || 12) + '"/><color rgb="' + (o.color || BLACK) + '"/><name val="' + (o.font || "Times New Roman") + '"/><family val="1"/></font>';
       var fill = o.fill ? '<fill><patternFill patternType="solid"><fgColor rgb="' + o.fill + '"/><bgColor indexed="64"/></patternFill></fill>' : fills[0];
-      var border = "<border><left/><right/><top/>" + (o.line ? '<bottom style="' + o.line + '"><color rgb="' + (o.line === "medium" ? "FF000000" : LINE) + '"/></bottom>' : "<bottom/>") + "<diagonal/></border>";
+      var border = "<border>" + side("left", bd.l) + side("right", bd.r) + side("top", bd.t) + side("bottom", bd.b) + "<diagonal/></border>";
       var nf = o.fmt ? 164 + idx(fmts, o.fmt) : 0;
       return idx(xfs, '<xf numFmtId="' + nf + '" fontId="' + idx(fonts, font) + '" fillId="' + idx(fills, fill) + '" borderId="' + idx(borders, border) + '" xfId="0" applyFont="1"' +
-        (nf ? ' applyNumberFormat="1"' : "") + (o.fill ? ' applyFill="1"' : "") + (o.line ? ' applyBorder="1"' : "") +
-        ' applyAlignment="1"><alignment horizontal="' + (o.h || "left") + '" vertical="center" wrapText="1"/></xf>');
+        (nf ? ' applyNumberFormat="1"' : "") + (o.fill ? ' applyFill="1"' : "") + (o.border ? ' applyBorder="1"' : "") +
+        ' applyAlignment="1"><alignment horizontal="' + (o.h || "left") + '" vertical="' + (o.v || "center") + '" wrapText="1"/></xf>');
     }
     id({});                               /* 0-uslub: oddiy matn */
     return {
@@ -430,13 +464,24 @@ footer{border-top:1px solid var(--grid);padding:18px 0 40px;color:var(--muted);f
     };
   }
 
-  /* Bitta varaq: put("B4", qiymat, uslub), merge("A1:D1"), height(qator, balandlik) */
+  /* Bitta varaq: put("B2", qiymat, uslub), style("A3", {border}), merge("A1:D1"), height(qator, balandlik) */
   function newSheet(styles, str) {
-    var cells = {}, heights = {}, merges = [];
+    var cells = {}, heights = {}, merges = [], ncols = 5;
+    function colIndex(a) { return a.charCodeAt(0) - 65; }
     return {
-      put: function (addr, value, o) { cells[addr] = { v: value, s: styles.id(o) }; },
+      put: function (addr, value, o) {
+        var old = cells[addr] ? cells[addr].o : {}, k, nw = {};
+        for (k in old) nw[k] = old[k];
+        for (k in (o || {})) nw[k] = o[k];
+        cells[addr] = { v: value, o: nw };
+        ncols = Math.max(ncols, colIndex(addr) + 1);
+      },
+      style: function (addr, o) {
+        if (!cells[addr]) cells[addr] = { v: null, o: {} };
+        for (var k in o) cells[addr].o[k] = o[k];
+      },
       merge: function (ref) { merges.push(ref); },
-      height: function (row, h) { heights[row] = h; },
+      height: function (row, h) { heights[row] = Math.max(heights[row] || 0, h); },
       xml: function (selected) {
         var byRow = {}, last = 1;
         Object.keys(cells).forEach(function (a) {
@@ -446,104 +491,136 @@ footer{border-top:1px solid var(--grid);padding:18px 0 40px;color:var(--muted);f
         });
         var data = Object.keys(byRow).map(Number).sort(function (a, b) { return a - b; }).map(function (r) {
           var row = byRow[r].sort().map(function (a) {
-            var c = cells[a], v = c.v, head = '<c r="' + a + '" s="' + c.s + '"';
+            var c = cells[a], v = c.v, head = '<c r="' + a + '" s="' + styles.id(c.o) + '"';
+            if (v === null) return head + "/>";
             if (typeof v === "number") return head + "><v>" + v + "</v></c>";
             if (typeof v === "string") return head + ' t="s"><v>' + str(v) + "</v></c>";
             return head + "><f>" + x(v.formula) + "</f><v>" + v.result + "</v></c>";
           }).join("");
           return '<row r="' + r + '"' + (heights[r] ? ' ht="' + heights[r] + '" customHeight="1"' : "") + ">" + row + "</row>";
         }).join("");
-        return XML + '<worksheet xmlns="' + NS + '"><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><dimension ref="A1:D' + last + '"/>' +
+        var cols = "";
+        for (var i = 0; i < ncols; i++) cols += '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + colW(i) + '" customWidth="1"/>';
+        return XML + '<worksheet xmlns="' + NS + '"><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><dimension ref="A1:' + L(ncols - 1) + last + '"/>' +
           '<sheetViews><sheetView' + (selected ? ' tabSelected="1"' : "") + ' workbookViewId="0"/></sheetViews><sheetFormatPr defaultRowHeight="15.75"/>' +
-          "<cols>" + COLS.map(function (w, i) { return '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + w + '" customWidth="1"/>'; }).join("") + "</cols>" +
-          "<sheetData>" + data + "</sheetData>" +
+          "<cols>" + cols + "</cols><sheetData>" + data + "</sheetData>" +
           '<mergeCells count="' + merges.length + '">' + merges.map(function (m) { return '<mergeCell ref="' + m + '"/>'; }).join("") + "</mergeCells>" +
-          '<pageMargins left="0.5" right="0.5" top="0.6" bottom="0.6" header="0.3" footer="0.3"/>' +
+          '<pageMargins left="0.4" right="0.4" top="0.5" bottom="0.5" header="0.3" footer="0.3"/>' +
           '<pageSetup paperSize="9" orientation="landscape" fitToHeight="0"/></worksheet>';
       }
     };
   }
 
-  /* Bitta topshiriqni varaqqa joylash (namunadagi jadval tartibida) */
+  /* Bitta topshiriqni varaqqa joylash (namunadagi rasm tartibida):
+     1-qator sarlavha; 2–3 parametrlar (n — B2, p — D2, q — B3); 4 jadval sarlavhasi;
+     5-qatordan taqsimot; keyin xarakteristikalar va D ustunda formulalar bilan tekshiruv;
+     E ustunda shart; jadval ostida har bir P(X = k) ning hisobi. */
   function fillSheet(ws, t) {
     var s = solve(t), n = t.n;
-    function nf(v) { return (v !== 0 && Math.abs(v) < 1e-5) ? "0.000E+00" : "0.000###"; }
-    function lines(text, perLine) { return Math.max(1, Math.ceil(text.length / perLine)); }
+    function pf(v) { return (v !== 0 && Math.abs(v) < 5e-7) ? "0.000E+00" : "0.000000"; }
+    function lines(text, w) { return String(text).split("\n").reduce(function (a, l) { return a + Math.max(1, Math.ceil(l.length / w)); }, 0); }
+    var MATH = { font: "Cambria Math", size: 11 };
 
     /* sarlavha */
     ws.merge("A1:D1");
     ws.put("A1", t.id + "-topshiriq. " + t.title, { size: 16, bold: true, h: "center" });
-    ws.height(1, 28);
-    var sub = "X — " + t.x + ". Excel formulalari yordamida binomial taqsimot hisoblanadi." + (t.note ? " " + t.note : "");
-    ws.merge("A2:D2");
-    ws.put("A2", sub, { italic: true, color: NAVY });
-    ws.height(2, 17 * lines(sub, 150));
+    ws.height(1, 30);
 
-    /* parametrlar: B4 = n, D4 = p, B5 = q */
-    ws.put("A4", "Tajriba soni (n)", { line: "thin" });
-    ws.put("B4", n, { h: "center", line: "thin" });
-    ws.put("C4", t.pl + " (p)", { h: "center", line: "thin" });
-    ws.put("D4", t.pExpr ? { formula: t.pExpr, result: t.p } : t.p, { h: "right", line: "thin" });
-    ws.put("A5", t.ql + " (q)", { line: "thin" });
-    ws.put("B5", { formula: "1-D4", result: s.q }, { h: "center", line: "thin" });
-    ws.put("C5", "Nazariy model", { h: "center", line: "thin" });
-    ws.put("D5", "Binomial B(n; p)", { line: "thin" });
+    /* E ustun: shart va umumiy formula */
+    var cond = t.text + (t.note ? " " + t.note : "");
+    ws.merge("E1:E2");
+    ws.put("E1", cond, { size: 10, v: "top" });
+    ws.put("E3", "P(X = k) = Cₙᵏ · pᵏ · qⁿ⁻ᵏ", MATH);
+
+    /* parametrlar */
+    ws.put("A2", "Tajriba soni (n)");
+    ws.put("B2", n, { h: "center", color: BLUE });
+    ws.put("C2", t.pl + " (p)", { h: "center" });
+    ws.put("D2", t.pExpr ? { formula: t.pExpr, result: t.p } : t.p, { h: "center", color: BLUE });
+    ws.put("A3", t.ql + " (q)");
+    ws.put("B3", { formula: "1-D2", result: s.q }, { h: "center" });
+    ws.put("C3", "Nazariy model", { h: "center" });
+    ws.put("D3", "Binomial B(n; p)", { h: "center" });
+    ws.height(2, Math.max(17 * lines(t.pl + " (p)", colW(2) * 1.05), 13 * lines(cond, colW(4) * 1.25) + 6 - 30, 18));
+    ws.height(3, Math.max(17 * lines(t.ql + " (q)", colW(0) * 1.05), 18));
 
     /* taqsimot jadvali */
-    var head = 7, first = 8, last = first + n, tot = last + 1;
-    ws.put("A" + head, "X = k", { bold: true, h: "center", line: "medium" });
-    ws.put("B" + head, "Kombinatsiyalar soni C(" + n + ";k)", { bold: true, h: "center", line: "medium" });
-    ws.put("C" + head, "P(X = k)", { bold: true, h: "center", line: "medium" });
-    ws.put("D" + head, "Holat izohi", { bold: true, h: "center", line: "medium" });
-    ws.height(head, 24);
+    var head = 4, first = 5, last = first + n, tot = last + 1;
+    ws.put("A" + head, "X = k", { bold: true, h: "center" });
+    ws.put("B" + head, "Kombinatsiyalar soni C(" + n + ";k)", { bold: true, h: "center" });
+    ws.put("C" + head, "P(X = k)", { bold: true, h: "center" });
+    ws.put("D" + head, "Holat izohi", { bold: true, h: "center" });
+    ws.height(head, 22);
     s.rows.forEach(function (r) {
       var i = first + r.k;
-      ws.put("A" + i, r.k, { h: "center", line: "thin" });
-      ws.put("B" + i, { formula: "COMBIN($B$4,A" + i + ")", result: r.c }, { h: "center", line: "thin" });
-      ws.put("C" + i, { formula: "B" + i + "*$D$4^A" + i + "*$B$5^($B$4-A" + i + ")", result: r.P }, { h: "center", line: "thin", fmt: nf(r.P) });
-      ws.put("D" + i, r.note, { line: "thin" });
+      ws.put("A" + i, r.k, { h: "center" });
+      ws.put("B" + i, { formula: "COMBIN($B$2,A" + i + ")", result: r.c }, { h: "center" });
+      ws.put("C" + i, { formula: "B" + i + "*$D$2^A" + i + "*$B$3^($B$2-A" + i + ")", result: r.P }, { h: "center", fmt: pf(r.P) });
+      ws.put("D" + i, r.note);
     });
     var rngA = "A" + first + ":A" + last, rngB = "B" + first + ":B" + last, rngC = "C" + first + ":C" + last;
-    var band = { bold: true, h: "center", color: NAVY, fill: BAND };
-    ws.put("A" + tot, "Jami / tekshiruv", band);
-    ws.put("B" + tot, { formula: "SUM(" + rngB + ")", result: s.csum }, band);
-    ws.put("C" + tot, { formula: "SUM(" + rngC + ")", result: 1 }, { bold: true, h: "center", color: NAVY, fill: BAND, fmt: "0.000" });
-    ws.put("D" + tot, "Ehtimollar yig'indisi 1 bo'lishi kerak", band);
+    ws.put("A" + tot, "Jami / tekshiruv", { bold: true, h: "center" });
+    ws.put("B" + tot, { formula: "SUM(" + rngB + ")", result: s.csum }, { bold: true, h: "center" });
+    ws.put("C" + tot, { formula: "SUM(" + rngC + ")", result: 1 }, { bold: true, h: "center", fmt: "0.000" });
+    ws.put("D" + tot, "Ehtimollar yig'indisi 1 bo'lishi kerak", { bold: true, h: "center" });
 
     /* qo'shimcha xarakteristikalar */
-    var ch = tot + 2, rM = ch + 1, rM2 = ch + 2, rD = ch + 3, rS = ch + 4;
-    ws.put("A" + ch, "Qo'shimcha xarakteristika", { bold: true, h: "center", line: "medium" });
-    ws.put("B" + ch, "Hisoblash ifodasi", { bold: true, h: "center", line: "medium" });
-    ws.put("C" + ch, "Natija", { bold: true, h: "center", line: "medium" });
-    ws.height(ch, 24);
-    function charRow(r, label, expr, value, f) {
-      ws.put("A" + r, label, { line: "thin" });
-      ws.put("B" + r, expr, { line: "thin" });
-      ws.put("C" + r, value, { h: "center", line: "thin", fmt: f });
+    var ch = tot + 1, rM = ch + 1, rM2 = ch + 2, rD = ch + 3, rS = ch + 4;
+    ws.put("A" + ch, "Qo'shimcha xarakteristika", { bold: true, h: "center" });
+    ws.put("B" + ch, "Hisoblash ifodasi", { bold: true, h: "center" });
+    ws.put("C" + ch, "Natija", { bold: true, h: "center" });
+    function charRow(r, label, expr, value, f, check) {
+      ws.put("A" + r, label);
+      ws.put("B" + r, expr, { h: "center" });
+      ws.put("C" + r, value, { h: "center", fmt: f });
+      if (check) { ws.put("D" + r, check, MATH); ws.height(r, 17 * lines(check, colW(3) * 1.1)); }
     }
-    charRow(rM, "Matematik kutilma M(X)", "Σ k·P(X=k)", { formula: "SUMPRODUCT(" + rngA + "," + rngC + ")", result: s.M }, "0.000###");
-    charRow(rM2, "Ikkinchi moment M(X²)", "Σ k²·P(X=k)", { formula: "SUMPRODUCT(" + rngA + "^2," + rngC + ")", result: s.M2 }, "0.000###");
-    charRow(rD, "Dispersiya D(X)", "M(X²) − [M(X)]²", { formula: "C" + rM2 + "-C" + rM + "^2", result: s.D }, "0.000###");
-    charRow(rS, "O'rtacha kvadratik chetlanish σ(X)", "√D(X)", { formula: "SQRT(C" + rD + ")", result: s.sigma }, "0.000###");
+    charRow(rM, "Matematik kutilma M(X)", "Σ k·P(X=k)", { formula: "SUMPRODUCT(" + rngA + "," + rngC + ")", result: s.M }, "0.0000", s.checks.M);
+    charRow(rM2, "Ikkinchi moment M(X²)", "Σ k²·P(X=k)", { formula: "SUMPRODUCT(" + rngA + "^2," + rngC + ")", result: s.M2 }, "0.0000", s.checks.M2);
+    charRow(rD, "Dispersiya D(X)", "M(X²) − [M(X)]²", { formula: "C" + rM2 + "-C" + rM + "^2", result: s.D }, "0.0000", s.checks.D);
+    charRow(rS, "O'rtacha kvadratik chetlanish σ(X)", "√D(X)", { formula: "SQRT(C" + rD + ")", result: s.sigma }, "0.0000", s.checks.S);
+    ws.height(rS, 17 * lines("O'rtacha kvadratik chetlanish σ(X)", colW(0) * 1.05));
 
     var r = rS + 1, interp = null;
     s.extras.forEach(function (e) {
       if (e.interp) { interp = e.interp; return; }
       if (e.text) charRow(r, e.label, e.expr, e.text);
-      else charRow(r, e.label, e.expr, { formula: e.f(first), result: e.value }, nf(e.value));
+      else charRow(r, e.label, e.expr, { formula: e.f(first), result: e.value }, pf(e.value));
       r++;
     });
 
-    r++;
+    /* nazariy javob */
     ws.merge("A" + r + ":D" + r);
-    ws.put("A" + r, s.answer, { italic: true, color: NAVY });
-    ws.height(r, 17 * lines(s.answer, 150));
+    ws.put("A" + r, s.answer, { italic: true, color: NAVY, size: 11 });
+    ws.height(r, 15 * lines(s.answer, 140));
     if (interp) {
-      r += 2;
+      r++;
       ws.merge("A" + r + ":D" + r);
-      ws.put("A" + r, interp, { color: NAVY, fill: BAND });
-      ws.height(r, 17 * lines(interp, 140));
+      ws.put("A" + r, interp, { color: NAVY, fill: BAND, size: 11 });
+      ws.height(r, 15 * lines(interp, 135));
     }
+
+    /* jadval chiziqlari: tashqi qalin ramka, ichida nuqtali chiziqlar */
+    var M = ["medium", BLACK], TL = ["thin", LINE], TB = ["thin", BLACK], H = ["hair", DOT];
+    for (var row = 1; row <= r; row++) {
+      for (var c = 0; c < 4; c++) {
+        ws.style(L(c) + row, { border: {
+          l: c === 0 ? M : TL, r: c === 3 ? M : TL, t: row === 1 ? M : null,
+          b: (row === r || row === 3 || row === head) ? M : (row === tot - 1 || row === ch) ? TB : H
+        } });
+      }
+    }
+
+    /* jadval ostida: har bir P(X = k) ning hisobi */
+    var sr = r + 1, rr = r + 2, maxL = 2;
+    s.steps.forEach(function (st, k) {
+      var col = L(k), w = colW(k) * 1.0;
+      ws.put(col + sr, st.f1 + "\n" + st.f2, { font: "Cambria Math", size: 12, h: "center" });
+      ws.put(col + rr, st.res, { font: "Cambria Math", size: 12, h: "center", border: { l: TB, r: TB, t: TB, b: TB } });
+      maxL = Math.max(maxL, lines(st.f1, w) + lines(st.f2, w));
+    });
+    ws.height(sr, 18 * maxL + 10);
+    ws.height(rr, 24);
   }
 
   /* ZIP arxiv (siqmasdan saqlash). files: [{ name, text }] */
@@ -630,6 +707,7 @@ footer{border-top:1px solid var(--grid);padding:18px 0 40px;color:var(--muted);f
 if (typeof document !== "undefined") (function () {
   "use strict";
   var TJ = window.TJ, CATS = TJ.CATS, TASKS = TJ.TASKS, fmt = TJ.fmt, num = TJ.num;
+  function f4(v) { return v.toFixed(4).replace(".", ","); }
   var board = document.getElementById("board");
   var out = document.getElementById("solution");
   var findMsg = document.getElementById("findMsg");
@@ -680,10 +758,10 @@ if (typeof document !== "undefined") (function () {
     h += '<tr class="total"><td>Jami / tekshiruv</td><td>' + s.csum + "</td><td>" + s.sum.toFixed(3).replace(".", ",") + "</td><td>Ehtimollar yig'indisi 1 bo'lishi kerak</td></tr></tbody></table></div>";
 
     h += '<div class="scroll"><table class="chars"><thead><tr><th>Qo\'shimcha xarakteristika</th><th>Hisoblash ifodasi</th><th>Natija</th><th>Tekshiruv</th></tr></thead><tbody>' +
-      "<tr><td>Matematik kutilma M(X)</td><td>Σ k·P(X=k)</td><td>" + fmt(s.M) + "</td><td>n·p = " + n + "·" + num(t.p) + " = " + num(n * t.p) + "</td></tr>" +
-      "<tr><td>Ikkinchi moment M(X²)</td><td>Σ k²·P(X=k)</td><td>" + fmt(s.M2) + "</td><td></td></tr>" +
-      "<tr><td>Dispersiya D(X)</td><td>M(X²) − [M(X)]²</td><td>" + fmt(s.D) + "</td><td>n·p·q = " + num(n * t.p * s.q) + "</td></tr>" +
-      "<tr><td>O'rtacha kvadratik chetlanish σ(X)</td><td>√D(X)</td><td>" + fmt(s.sigma) + "</td><td></td></tr>";
+      "<tr><td>Matematik kutilma M(X)</td><td>Σ k·P(X=k)</td><td>" + f4(s.M) + "</td><td>" + esc(s.checks.M) + "</td></tr>" +
+      "<tr><td>Ikkinchi moment M(X²)</td><td>Σ k²·P(X=k)</td><td>" + f4(s.M2) + "</td><td>" + esc(s.checks.M2) + "</td></tr>" +
+      "<tr><td>Dispersiya D(X)</td><td>M(X²) − [M(X)]²</td><td>" + f4(s.D) + "</td><td>" + esc(s.checks.D) + "</td></tr>" +
+      "<tr><td>O'rtacha kvadratik chetlanish σ(X)</td><td>√D(X)</td><td>" + f4(s.sigma) + "</td><td>" + esc(s.checks.S) + "</td></tr>";
     var interp = "";
     s.extras.forEach(function (e) {
       if (e.interp) { interp = e.interp; return; }
@@ -704,12 +782,12 @@ if (typeof document !== "undefined") (function () {
     s.rows.forEach(function (r) { h += "<span>" + r.k + "</span>"; });
     h += "</div>";
 
-    h += "<details><summary>Har bir qator qanday hisoblangani</summary><ol>";
-    s.rows.forEach(function (r) {
-      h += "<li>P(X = " + r.k + ") = C(" + n + "; " + r.k + ") · " + num(t.p) + "<sup>" + r.k + "</sup> · " + num(s.q) + "<sup>" + (n - r.k) + "</sup> = " +
-        r.c + " · " + fmt(r.pk) + " · " + fmt(r.qk) + " = " + fmt(r.P) + "</li>";
+    /* har bir P(X = k) ning hisobi (Excel varag'idagi pastki qator kabi) */
+    h += '<p class="cap">Har bir ehtimolning hisoblanishi</p><div class="steps">';
+    s.steps.forEach(function (st) {
+      h += '<div class="step"><span>' + esc(st.f1) + "</span><span>" + esc(st.f2) + '</span><b>' + esc(st.res) + "</b></div>";
     });
-    h += "</ol></details>";
+    h += "</div>";
 
     h += '<div class="foot"><button type="button" class="btn go" data-xlsx="' + t.id + '" data-name="2-tajriba_' + t.id + '-topshiriq">Excel faylini yuklab olish</button>' +
       "<span>" + c.id + " kategoriya: " + esc(c.name) + '</span><span class="msg" role="status"></span></div>';
@@ -799,9 +877,6 @@ if (typeof document !== "undefined") (function () {
     if (r === null) { findMsg.textContent = "Avval raqam yoki harf yozing."; return; }
     if (typeof r === "string") { findMsg.textContent = r; return; }
     show(r, true);
-  });
-  window.addEventListener("beforeprint", function () {
-    [].forEach.call(document.querySelectorAll("details"), function (d) { d.open = true; });
   });
   function fromHash() {
     var r = parse(decodeURIComponent(location.hash.replace(/^#/, "")));

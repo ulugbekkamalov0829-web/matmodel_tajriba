@@ -40,17 +40,23 @@ D(X) = M(X²) − [M(X)]² = n·p·q
 σ(X) = √D(X)
 ```
 
-Excel faylida shu hisoblar quyidagi formulalar bilan yozilgan (n — `B4`, p — `D4`, q — `B5` katakda;
-kataklar manzili n = 5 bo'lgan topshiriq misolida):
+Excel faylining har bir varag'i namunadagi tartibda tuzilgan: 1-qatorda sarlavha, 2–3-qatorlarda
+parametrlar (n — `B2`, p — `D2`, q — `B3`), 5-qatordan taqsimot jadvali, undan keyin xarakteristikalar.
+D ustunda xarakteristikalar np, npq formulalari bilan qayta tekshirilgan, E ustunda topshiriq sharti,
+jadval ostida esa har bir P(X = k) ning qo'lda hisoblanishi (C₆⁰ · 0,2⁰ · 0,8⁶ = … ) beriladi.
+
+Formulalar (kataklar manzili n = 6 bo'lgan 13-topshiriq misolida):
 
 | Kattalik | Formula |
 |---|---|
-| C(n; k) | `=COMBIN($B$4;A8)` |
-| P(X = k) | `=B8*$D$4^A8*$B$5^($B$4-A8)` |
-| M(X) | `=SUMPRODUCT(A8:A13;C8:C13)` |
-| M(X²) | `=SUMPRODUCT(A8:A13^2;C8:C13)` |
-| D(X) | `=C18-C17^2` |
-| σ(X) | `=SQRT(C19)` |
+| q | `=1-D2` |
+| C(n; k) | `=COMBIN($B$2;A5)` |
+| P(X = k) | `=B5*$D$2^A5*$B$3^($B$2-A5)` |
+| Jami | `=SUM(C5:C11)` |
+| M(X) | `=SUMPRODUCT(A5:A11;C5:C11)` |
+| M(X²) | `=SUMPRODUCT(A5:A11^2;C5:C11)` |
+| D(X) | `=C15-C14^2` |
+| σ(X) | `=SQRT(C16)` |
 
 Excelning ruscha talqinida funksiya nomlari o'zi tarjima bo'lib ko'rinadi
 (`ЧИСЛКОМБ`, `СУММПРОИЗВ`, `КОРЕНЬ`).
